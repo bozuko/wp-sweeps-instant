@@ -33,16 +33,23 @@ jQuery(function($){
           
         btn.attr('disabled', 'disabled').addClass('disabled').val('Entering...');
         
-        $.ajax({
-            url             :$(this).attr('action'),
-            method          :'POST'
-        }).done(function(data){
-            if( data && data.html ){
-                $('#enter-tab').html( data.html );
-                $('#enter-tab').trigger('sweeps.update');
-            }
-        }).always(function(){
-            //btn.attr('disabled', false).removeClass('disabled').val(txt);
+        var self = this;
+        
+        FB.getLoginStatus(function(data){
+        
+            $.ajax({
+                url             :$(self).attr('action'),
+                method          :'POST',
+                data            :{fb_token: data.authResponse.accessToken}
+            }).done(function(data){
+                if( data && data.html ){
+                    $('#enter-tab').html( data.html );
+                    $('#enter-tab').trigger('sweeps.update');
+                }
+            }).always(function(){
+                //btn.attr('disabled', false).removeClass('disabled').val(txt);
+            });
+            
         });
     });
     

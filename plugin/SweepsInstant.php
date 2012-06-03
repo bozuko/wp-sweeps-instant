@@ -84,14 +84,28 @@ class SweepsInstant extends Snap_Wordpress_Plugin
         
         // add this dude to bozuko
         // $result = $this->bozuko()->call('/user', 'PUT', $user);
+        /*
         if( ($user = $this->campaign()->getFacebookUser()) ){
-            $user['service'] = 'facebook';
-            $user['token'] = $this->campaign()->facebook()->getAccessToken();
-            $result = $this->bozuko()->call('/user', 'PUT', array('data'=>$user) );
-            // lets hope all went well!
-            update_post_meta( $this->campaign()->get_entry_id(), 'bozuko_token', $result->token );
+            
+            Sweeps::log('after_enter has facebook user');
+            
+            try{
+                $user['service'] = 'facebook';
+                $user['token'] = $this->campaign()->facebook()->getAccessToken();
+                $result = $this->bozuko()->call('/user', 'PUT', array('data'=>$user) );
+                
+                Sweeps::log('created user', $result);
+                
+                // lets hope all went well!
+                update_post_meta( $this->campaign()->get_entry_id(), 'bozuko_token', $result->token );
+            }catch(Exception $e){
+                Sweeps::log( (string)$e );
+            }
         }
-        
+        else{
+            Sweeps::log('after_enter - NO FACEBOOK USER!');
+        }
+        */
         $result = $this->do_instant_win( $this->campaign()->get_entry_id() );
         $result['success'] = true;
         return $this->returnJSON( $result );
@@ -273,8 +287,6 @@ class SweepsInstant extends Snap_Wordpress_Plugin
     
     protected function do_instant_win( $entry_id )
     {
-        $token = get_post_meta( $entry_id, 'bozuko_token', true );
-        $this->bozuko()->setToken($token);
         
         $game_id = $this->campaign()->getValue('bozuko_game');
         $win=false;
@@ -283,10 +295,25 @@ class SweepsInstant extends Snap_Wordpress_Plugin
             
             // do this to update the access token...
             $user = $this->campaign()->getFacebookUser();
+            
+            if( !$user) {
+                
+                if( ($token = @$_REQUEST['fb_token']) ){
+                    $this->campaign()->facebook()->setAccessToken( $token );
+                    $user = $this->campaign()->getFacebookUser();
+                }
+                
+                if( !$user ){
+                    throw new Exception('No Facebook User');
+                }
+            }
+            
             $user['service'] = 'facebook';
             $user['token'] = $this->campaign()->facebook()->getAccessToken();
             $user = $this->bozuko()->call('/user', 'PUT', array('data'=>$user) );
+            $this->bozuko()->setToken($user->token);
             
+            Sweeps::log('updated user', $user);
             
             $game = $this->bozuko()->call('/game/'.$game_id);
             if( !$game->game_state ) throw new Exception('No Game State');
