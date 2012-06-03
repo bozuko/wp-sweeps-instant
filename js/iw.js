@@ -39,7 +39,7 @@ jQuery(function($){
         
             $.ajax({
                 url             :$(self).attr('action'),
-                method          :'POST',
+                type            :'POST',
                 data            :{fb_token: data.authResponse.accessToken}
             }).done(function(data){
                 if( data && data.html ){
